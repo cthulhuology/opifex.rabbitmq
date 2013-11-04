@@ -50,6 +50,17 @@ RabbitMQ = () ->
 		Put "create.user", "/api/users/#{name}", { password: password, tags: tags.join(',') }
 	self["grant.user"] = (vhost, name, read, write, config) ->
 		Put "grant.user", "/api/permissions/#{vhost}/#{name}", { read: read, write: write, configure: config }
+	self["federate"] = ( vhost, user, pass, name, priority, maxhops, pattern, uris... ) ->
+		Put 'federate.user', "/api/parameters/federation/#{vhost}/local-username",
+			{ vhost: vhost, component: "federation",  value: user }
+		Put 'federate.password', "/api/parameters/federation/#{vhost}/local-nodename",
+			{ vhost: vhost, component: "federation",  value: pass }
+		Put 'federate.upstream-set', "/api/parameters/federation-upstream-set/#{vhost}/#{name}",
+			{ vhost: vhost, component: "federation-upstream-set", value: [ { upstream: name }] }
+		Put 'federate.upstream', "/api/parameters/federation-upstream/#{vhost}/#{name}",
+			{ vhost: vhost, component: "federation-upstream", value: { uri: uris, 'max-hops':  maxhops }}
+		Put 'federate.policy', "/api/policies/#{vhost}/#{name}",
+			{pattern: pattern, definition: {"federation-upstream-set": name}, priority: priority}
 	self["*"] = (message...) ->
 		console.log "Unknown message #{ JSON.stringify(message) }"
 
